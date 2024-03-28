@@ -1,0 +1,21 @@
+---
+title: "K-means Algorithm"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+This is the report of our project :) 
+
+### Examples that use the method \
+### Data Characteristics \
+### Description of library, functions and parameters \
+### Empirical Analysis \
+##### Goal
+##### Assumptions
+##### Results
+##### Interpretation
+
