@@ -4,18 +4,120 @@ output: html_document
 ---
 
 ```{r setup, include=FALSE}
+library(knitr)
+library(ggplot2)
+library(factoextra)
+library(dplyr)
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
 
-This is the report of our project :) 
+#### Examples that use the method \
+K-means clustering is one of the most famous unsupervised machine learning algorithm, mainly due to its simplicity, efficiency and easiness in interpretation. 
+Main use cases for K-means across industries are: \
+* customer segmentation: clustering groups of customers and based on that targeting them 
+* image segmentation 
+* documents classification 
+In our report we decided to use k-means to try to group laptops, based on their parameters. 
 
-### Examples that use the method \
-### Data Characteristics \
-### Description of library, functions and parameters \
-### Empirical Analysis \
-##### Goal
-##### Assumptions
-##### Results
-##### Interpretation
+
+#### Data Characteristics \
+The dataset is from Kaggle.com and contains information about different laptops including the price, display parameters, brand, gpu information etc. It has 991 rows in total, 22 columns and no missing values. 
+
+```{r echo = FALSE}
+df <- read.csv("laptops.csv", header=TRUE)
+df <- subset(df, select = -Model)
+df_numeric <- df %>% select(where(is.numeric))
+df_numeric <- df_numeric[, !names(df_numeric) %in% c("secondary_storage_capacity")]  
+df_scaled <- scale(df_numeric[-1])
+
+knitr::kable(head(df), "pipe")
+```
+
+To perform the clustering succesfully, some preparations had to be done.  
+
+* dropping the non-numeric columns 
+* dropping the unbalanced columns (eg. the majority of values = 0 )
+* scaling the dataset 
+
+Visualization of dataset gave insight into data characteristics. For example, the distribution of price values is left-skewed, with median 7727$ and max 45449$. 
+On the other hand, ratings distribution was close to normal distribution, with median being 64. 
+```{r echo = FALSE}
+ggplot(data=df, aes(x=Price)) +
+  geom_histogram(fill="steelblue", color="black") +
+  ggtitle("Histogram of Price Values")
+```
+
+
+#### Description of library, functions and parameters \
+**Libraries used** 
+
+ * To perform data visualization we used *ggplot2*, that allowed to visualize more complicated charts (such as boxplots, histograms) in a more visually appealing form.
+ * We incorporated the correlation plot using *corrplot* 
+ * *NbClust* was used to visualize the elbow plot to find the optimal number of clusters 
+ * After performing k-means clustering on the dataset, we used *factoextra* to get a visual representation of clusters
+ * Additionaly, *dplyr* was used for data manipulation, and *RColorBrewer* for managing visualization colors.
+ 
+ **Functions** \
+ First the function *fviz_nbuclust()* to visualize the elbow method. According to the graph generated, the function starts to flatten at 3 clusters. The second time it rises is at 7 clusters, so both parameters were tested in the future analysis. 
+```{r echo = FALSE}
+fviz_nbclust(df_scaled, kmeans, method = "wss", linecolor = "red") + 
+  labs(subtitle="Elbow Method") + 
+  geom_vline(xintercept = 3, linetype = 2)
+```
+ 
+ 
+ K-means is a relatively simple algorithm, the main function was build to perform the clustering and associated with it results. 
+```{r}
+k_means_func <- function(k, i) {
+  
+  # K means 
+  startTime <- Sys.time()
+  km.out <- kmeans(df_scaled, centers=k, nstart=i)
+  endTime <- Sys.time()
+  computing_time <- (endTime-startTime)
+  print(computing_time)
+  
+  # Visualize the clustering algorithm results.
+  km.clusters<-km.out$cluster
+
+  # Visualize the clusters 
+  cluster_viz <- fviz_cluster(list(data=df_scaled, cluster = km.clusters))
+  print(cluster_viz)
+  
+  # Show the mean values for clusters 
+  cluster_values <- aggregate(df_numeric[-1], by=list(cluster=km.out$cluster),mean)
+  print(cluster_values)
+  
+  # Final data
+  df_with_clusters <- cbind(df, cluster = km.out$cluster)
+  cluster_count <- df_with_clusters %>% count(cluster, sort = TRUE)
+  print(cluster_count)
+}
+```
+ 
+
+1. First the function performs the clustering, that is timed for performance check. \
+2. Then the results are being printed: the visualization of clusters, the count of observations in each cluster and the mean value of variables in each cluster.\
+3. Finally is binding the cluster number with the original dataset, so that every observation has its cluster assigned 
+
+**Parameters** \
+The function takes two parameters: *k* which is number of centers, and *i* which sets the number of initial configurations. \
+
+#### Empirical Analysis \
+**Goal** \
+The goal of this project was to perform k-means clustering on a dataset that contained information about different models of laptops, to test the algorithm on a real-life based situation and empirically verify the results. 
+Moreover, the goal was to test different initial parameters k and i, and compare how they influence the final result. 
+
+**Results** \
+Two variants were tested: k-means function with 3 centers and with 7 centers. Acccordingly, each of variant was tested with 10, 50 or 100 initial configurations. \
+
+*3 centers* \
+The results were the same in all initial configurations: \
+*Clusters*: {'1': 439, '2':414, 3: '138'} where cluster 1 are the least expensive laptops with mean price 4290, rating 55 and cluster 3 with mean price 17000, rating 75 and all the other parameters accordingly higher, cluster 2 are the mid-priced laptops. \
+*Time*: {10: 0.01s, 50:0.02s, 100: 0.04s} \
+\
+*7 centers* \
+Here, there were slight differences between the results, mainly in the count of observations in a cluster (difference ~3 observations). However, it was difficult to interpret the result as there were much more clusters. 
+*Time*: {10: 0.01s, 50:0.04s, 100: 0.04s} \
 

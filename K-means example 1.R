@@ -4,8 +4,9 @@
 # install.packages("dplyr")
 # install.packages("ggplot2")
 # install.packages("NbClust")
-# install.packages("ClusterR") 
-# install.packages("cluster") 
+# install.packages("ClusterR")
+# install.packages("cluster")
+# install.packages("factoextra")
 
 # Loading package 
 library(ClusterR) 
@@ -20,6 +21,9 @@ library(RColorBrewer)
 # Read the data 
 df <- read.csv("laptops.csv", header=TRUE)
 summary(df)
+
+# check for NAs
+colSums(is.na(df))
 
 # Price should be divided by 10
 df$Price = df$Price/10
@@ -47,6 +51,7 @@ ggplot(data=df, aes(x=Price)) +
 ggplot(data=df, aes(x=Rating)) +
   geom_histogram(fill="steelblue", color="black") +
   ggtitle("Histogram of Ratings")
+
 
 # Visualize the Prices within brands 
 ggplot(data=df, aes(x=Price, y=brand)) + 
@@ -90,14 +95,15 @@ k_means_func <- function(k, i) {
   df_with_clusters <- cbind(df, cluster = km.out$cluster)
   cluster_count <- df_with_clusters %>% count(cluster, sort = TRUE)
   print(cluster_count)
+  return(df_with_clusters)
   
 }
 
 
-k_means_func(3, 10)
-k_means_func(3, 50)
-k_means_func(3, 100)
-k_means_func(7, 10)
-k_means_func(7, 50)
+df_with_clusters = k_means_func(3, 100)
+df_with_clusters = k_means_func(3, 50)
+df_with_clusters = k_means_func(3, 100)
+df_with_clusters = k_means_func(7, 10)
+df_with_clusters = k_means_func(7, 50)
 
 
